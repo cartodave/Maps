@@ -1,0 +1,168 @@
+<html> 
+<head> 
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no"/> 
+<meta http-equiv="content-type" content="text/html; charset=UTF-8"/> 
+<title>WMS in Google Maps V3</title> 
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script> 
+
+<script type="text/javascript"> 
+   
+    //setting up the dual maps
+    var map;
+    
+
+    var WMS_1;
+    var WMS_2;
+    
+ 
+    function initialize() {
+        //Set the center of the map
+        var map_center = new google.maps.LatLng(38.87, -94.63);
+        //Set the map properties
+        var map_setup = {
+            zoom: 4,
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            MapTypeControl: true,
+            mapTypeControlOptions: { style: google.maps.MapTypeControlStyle.DROPDOWN_MENU },
+            navigationControl: true,
+            navigationControlOptions: { style: google.maps.NavigationControlStyle.ZOOM_PAN },
+            backgroundColor: 'White',
+            scrollwheel: true,
+            maxZoom: 17,
+            minZoom: 1,
+            scaleControl: true,
+            center: map_center
+        }
+ 
+        map = new google.maps.Map(document.getElementById("map"), map_setup);
+      
+        //Creating the WMS layer options.  This code creates the Google imagemaptype options for each wms layer.  In the options the function that calls the individual 
+        //wms layer is set 
+ 
+        var wms_1_Options = {
+            alt: "WMS",
+            baseUrl:"http://demo.cubewerx.com/cubewerx/cubeserv.cgi?",
+            getTileUrl: WMSGetTileUrl,
+            isPng: false,
+            maxZoom: 17,
+            minZoom: 1,
+            name: "WMS",
+            tileSize: new google.maps.Size(256, 256)
+
+        };
+
+		
+        var wms_2_Options = {
+            alt: "Tiger",
+            getTileUrl: WMSGetTileUrl2,
+            isPng: false,
+            maxZoom: 17,
+            minZoom: 1,
+            name: "Tiger",
+            tileSize: new google.maps.Size(256, 256)
+
+        };
+        
+ 
+        //Creating the object to create the ImageMapType that will call the WMS Layer Options.
+
+        WMS_1 = new google.maps.ImageMapType(wms_1_Options);
+        WMS_2 = new google.maps.ImageMapType(wms_2_Options);
+      
+        //Layers to appear on Map A.  The first string will give the map the map a name in the dropdown and the second object calls the map type
+
+        map.mapTypes.set('WMS', WMS_1);
+        map.mapTypes.set('Tiger', WMS_2);
+       
+ 
+        //Controling the Layers that appear in Map A.  You can set certain maps to appear in Map A.
+        map.setOptions({
+            mapTypeControlOptions: {
+                mapTypeIds: [
+		  'WMS','Tiger', google.maps.MapTypeId.ROADMAP
+		],
+                style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+            }
+        });
+ 
+    
+    map.setMapTypeId('Tiger');
+    
+    
+}
+ 
+ 
+  function WMSGetTileUrl2(tile, zoom) {
+      var projection = window.map.getProjection();
+      var zpow = Math.pow(2, zoom);
+      var ul = new google.maps.Point(tile.x * 256.0 / zpow, (tile.y + 1) * 256.0 / zpow);
+      var lr = new google.maps.Point((tile.x + 1) * 256.0 / zpow, (tile.y) * 256.0 / zpow);
+      var ulw = projection.fromPointToLatLng(ul);
+      var lrw = projection.fromPointToLatLng(lr);
+      //The user will enter the address to the public WMS layer here.  The data must be in WGS84
+      var baseURL = "http://23.236.53.135:8080/geoserver/tiger/wms?";
+      var version = "1.3.0";
+      var request = "GetMap";
+      var format = "image%2Fjpeg"; //type of image returned  or image/jpeg
+      //The layer ID.  Can be found when using the layers properties tool in ArcMap or from the WMS settings 
+      var layers = "tiger:csregions, tiger:cscanada";
+      //projection to display. This is the projection of google map. Don't change unless you know what you are doing.  
+      //Different from other WMS servers that the projection information is called by crs, instead of srs
+      var crs = "EPSG:4326"; 
+      //With the 1.3.0 version the coordinates are read in LatLon, as opposed to LonLat in previous versions
+      var bbox = ulw.lat() + "," + ulw.lng() + "," + lrw.lat() + "," + lrw.lng();
+      var service = "WMS";
+      //the size of the tile, must be 256x256
+      var width = "256";
+      var height = "256";
+      //Some WMS come with named styles.  The user can set to default.
+      var styles = "";
+      //Establish the baseURL.  Several elements, including &EXCEPTIONS=INIMAGE and &Service are unique to openLayers addresses.
+      var url = baseURL + "Layers=" + layers + "&version=" + version + "&EXCEPTIONS=INIMAGE" + "&Service=" + service + "&request=" + request + "&Styles=" + styles + "&format=" + format + "&CRS=" + crs + "&BBOX=" + bbox + "&width=" + width + "&height=" + height;
+      return url;
+  }
+
+
+  function WMSGetTileUrl(tile, zoom) {
+      var projection = window.map.getProjection();
+      var zpow = Math.pow(2, zoom);
+      var ul = new google.maps.Point(tile.x * 256.0 / zpow, (tile.y + 1) * 256.0 / zpow);
+      var lr = new google.maps.Point((tile.x + 1) * 256.0 / zpow, (tile.y) * 256.0 / zpow);
+      var ulw = projection.fromPointToLatLng(ul);
+      var lrw = projection.fromPointToLatLng(lr);
+      //The user will enter the address to the public WMS layer here.  The data must be in WGS84
+      var baseURL = "http://demo.cubewerx.com/cubewerx/cubeserv.cgi?";
+      var version = "1.3.0";
+      var request = "GetMap";
+      var format = "image%2Fjpeg"; //type of image returned  or image/jpeg
+      //The layer ID.  Can be found when using the layers properties tool in ArcMap or from the WMS settings 
+      var layers = "Foundation.GTOPO30";
+      //projection to display. This is the projection of google map. Don't change unless you know what you are doing.  
+      //Different from other WMS servers that the projection information is called by crs, instead of srs
+      var crs = "EPSG:4326"; 
+      //With the 1.3.0 version the coordinates are read in LatLon, as opposed to LonLat in previous versions
+      var bbox = ulw.lat() + "," + ulw.lng() + "," + lrw.lat() + "," + lrw.lng();
+      var service = "WMS";
+      //the size of the tile, must be 256x256
+      var width = "256";
+      var height = "256";
+      //Some WMS come with named styles.  The user can set to default.
+      var styles = "default";
+      //Establish the baseURL.  Several elements, including &EXCEPTIONS=INIMAGE and &Service are unique to openLayers addresses.
+      var url = baseURL + "Layers=" + layers + "&version=" + version + "&EXCEPTIONS=INIMAGE" + "&Service=" + service + "&request=" + request + "&Styles=" + styles + "&format=" + format + "&CRS=" + crs + "&BBOX=" + bbox + "&width=" + width + "&height=" + height;
+      return url;
+  }
+ 
+
+  </script>
+
+  </head>
+
+  <body onload="initialize()"> 
+  <div id="map" style="position:absolute; left:0px; right:0px; bottom:0px; top:0px;"></div> 
+
+  </body>
+ 
+</script> 
+ 
+</head> 
